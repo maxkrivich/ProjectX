@@ -13,8 +13,6 @@ OK_COLOR=\x1b[32;01m
 ERROR_COLOR=\x1b[31;01m
 WARN_COLOR=\x1b[33;01m
 
-
-
 OK_STRING=$(OK_COLOR)[OK]$(NO_COLOR)
 ERROR_STRING=$(ERROR_COLOR)[ERRORS]$(NO_COLOR)
 WARN_STRING=$(WARN_COLOR)[WARNINGS]$(NO_COLOR)
@@ -30,7 +28,7 @@ test:
 	$(GOTEST) -v ./...
 
 clean:
-	$(GOCLEAN)
+	$(GOCLEAN) -x
 	rm -f $(BINARY_NAME)
 
 run:
@@ -50,5 +48,5 @@ docker-build:
 compose:
 	@echo "${OK_COLOR}Building binary file${NO_COLOR}" 
 	@make docker-build
-	@echo "${OK_COLOR} Start docker containers${NO_COLOR}"
+	@echo "${OK_COLOR}Start docker containers${NO_COLOR}"
 	docker-compose up --build
