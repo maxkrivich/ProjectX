@@ -1,9 +1,9 @@
 package configs
 
 import (
+	"fmt"
 	"log"
 	"os"
-	"fmt"
 )
 
 type DBConfig struct {
@@ -20,9 +20,17 @@ type ServerConfig struct {
 	Host string
 }
 
+type MinioConfig struct {
+	Endpoint        string
+	AccessKeyID     string
+	SecretAccessKey string
+	UseSSL          bool
+}
+
 type Config struct {
 	DBConfig
 	ServerConfig
+	MinioConfig
 }
 
 var config *Config
@@ -53,9 +61,18 @@ func newServerConfig() ServerConfig {
 	}
 }
 
+func newMinioConfig() MinioConfig {
+	return MinioConfig{
+		Endpoint:        getEnvVal("MINIO_ENDPOINT", false),
+		AccessKeyID:     getEnvVal("MINIO_ACCESS_KEY", false),
+		SecretAccessKey: getEnvVal("MINIO_SECRET_KEY", false),
+		UseSSL:          false,
+	}
+}
+
 func GetConfig() *Config {
 	if config == nil {
-		config = &Config{newDBConfig(), newServerConfig()}
+		config = &Config{newDBConfig(), newServerConfig(), newMinioConfig()}
 	}
 	return config
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/maxkrivich/ProjectX/api"
 	"github.com/maxkrivich/ProjectX/configs"
 	"github.com/maxkrivich/ProjectX/models"
+	"github.com/minio/minio-go"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
@@ -18,6 +19,7 @@ type RunService struct {
 	configs *configs.Config
 	router  *gin.Engine
 	db      *gorm.DB
+	mc      *minio.Client
 }
 
 func NewRunService(conf *configs.Config) *RunService {
@@ -30,7 +32,32 @@ func NewRunService(conf *configs.Config) *RunService {
 	rs.db = db
 	rs.router = gin.Default()
 	rs.initRouters()
+
+	if err := rs.initMinioClient(); err != nil {
+		log.Fatal(err)
+	}
+
 	return &rs
+}
+
+func (rs *RunService) initMinioClient() (err error) {
+	rs.mc, err = minio.New(rs.configs.Endpoint, rs.configs.AccessKeyID, rs.configs.SecretAccessKey, rs.configs.UseSSL)
+	if err != nil {
+		return err
+	}
+	bucketName := "files"
+
+	if err := rs.mc.MakeBucket(bucketName, "/data"); err != nil {
+
+		exists, err := rs.mc.BucketExists(bucketName)
+		if err == nil && exists {
+			log.Printf("Bucket '%s' is already exists\n", bucketName)
+		} else {
+			return err
+		}
+	}
+	log.Printf("Successfully created '%s'\n", bucketName)
+	return nil
 }
 
 func (rs *RunService) Run() error {
@@ -62,6 +89,10 @@ func (rs *RunService) initRouters() {
 	rs.router.POST("/run", rc.CreateRun)
 	rs.router.PUT("/run/:id", rc.UpdateRun)
 	rs.router.DELETE("/run/:id", rc.DeleteRun)
+
+	rs.router.GET("file/download", rc.FileDownload)
+	rs.router.POST("file/upload", rc.FileUpload)
+	rs.router.DELETE("file/delete", rc.FileDelete)
 }
 
 // TODO
