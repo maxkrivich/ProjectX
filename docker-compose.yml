@@ -23,6 +23,19 @@ services:
     depends_on:
       - postgres
 
+  minio:
+    image: minio/minio
+    restart: always
+    env_file: .env
+    ports:
+      - "9000:9000"
+    environment:
+      - MINIO_ACCESS_KEY=1y1SepNf7OyE6hUtQ243LtzC4RSvYe6H
+      - MINIO_SECRET_KEY=TyI8sPuJZjWmSrMXbhsWZVbanBvvzk2RdpuMZuBPRwX3EmWjxLCUNr0fQqHq7eqc
+    command: server /data
+    volumes:
+      - miniodata:/data
 
 volumes:
   pgdata:
+  miniodata:
