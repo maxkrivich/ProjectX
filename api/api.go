@@ -15,7 +15,7 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
-type RunControllers struct {
+type APIControllers struct {
 	db *gorm.DB
 }
 
@@ -31,11 +31,11 @@ type RunPagination struct {
 	Pagination
 }
 
-func NewRunControllers(db *gorm.DB) *RunControllers {
-	return &RunControllers{db: db}
+func NewAPIController(db *gorm.DB) *APIControllers {
+	return &APIControllers{db: db}
 }
 
-func (rc *RunControllers) CreateRun(c *gin.Context) {
+func (rc *APIControllers) CreateRun(c *gin.Context) {
 	var run models.Run
 	if c.Request.Body == nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "bad request"})
@@ -55,7 +55,7 @@ func (rc *RunControllers) CreateRun(c *gin.Context) {
 	c.JSON(http.StatusCreated, run)
 }
 
-func (rc *RunControllers) GetRun(c *gin.Context) {
+func (rc *APIControllers) GetRun(c *gin.Context) {
 	id, err := rc.getId(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "bad request"})
@@ -70,7 +70,7 @@ func (rc *RunControllers) GetRun(c *gin.Context) {
 	}
 }
 
-func (rc *RunControllers) GetAllRun(c *gin.Context) {
+func (rc *APIControllers) GetAllRun(c *gin.Context) {
 	var pag Pagination
 	limitQuery := c.DefaultQuery("perPage", "25")
 	pageQuery := c.DefaultQuery("page", "1")
@@ -95,7 +95,7 @@ func (rc *RunControllers) GetAllRun(c *gin.Context) {
 	c.JSON(http.StatusOK, RunPagination{Items: runs, Pagination: pag})
 }
 
-func (rc *RunControllers) UpdateRun(c *gin.Context) {
+func (rc *APIControllers) UpdateRun(c *gin.Context) {
 	id, err := rc.getId(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "bad request"})
@@ -128,7 +128,7 @@ func (rc *RunControllers) UpdateRun(c *gin.Context) {
 	}
 }
 
-func (rc *RunControllers) DeleteRun(c *gin.Context) {
+func (rc *APIControllers) DeleteRun(c *gin.Context) {
 	id, err := rc.getId(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "bad request"})
@@ -144,7 +144,7 @@ func (rc *RunControllers) DeleteRun(c *gin.Context) {
 	}
 }
 
-func (rc *RunControllers) getId(c *gin.Context) (uint, error) {
+func (rc *APIControllers) getId(c *gin.Context) (uint, error) {
 	idStr := c.Params.ByName("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {

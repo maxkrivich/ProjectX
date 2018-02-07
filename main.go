@@ -56,7 +56,7 @@ func (rs *RunService) initDB() (*gorm.DB, error) {
 }
 
 func (rs *RunService) initRouters() {
-	rc := api.NewRunControllers(rs.db)
+	rc := api.NewAPIController(rs.db)
 	rs.router.GET("/run", rc.GetAllRun)
 	rs.router.GET("/run/:id", rc.GetRun)
 	rs.router.POST("/run", rc.CreateRun)
