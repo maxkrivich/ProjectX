@@ -17,11 +17,13 @@ services:
     environment:
       - SERVER_HOST=0.0.0.0
       - SERVER_PORT=8080
+      - MINIO_ENDPOINT=minio:9000
     restart: always
     ports:
       - "80:8080"
     depends_on:
       - postgres
+      - minio
 
   minio:
     image: minio/minio
@@ -29,9 +31,6 @@ services:
     env_file: .env
     ports:
       - "9000:9000"
-    environment:
-      - MINIO_ACCESS_KEY=1y1SepNf7OyE6hUtQ243LtzC4RSvYe6H
-      - MINIO_SECRET_KEY=TyI8sPuJZjWmSrMXbhsWZVbanBvvzk2RdpuMZuBPRwX3EmWjxLCUNr0fQqHq7eqc
     command: server /data
     volumes:
       - miniodata:/data
