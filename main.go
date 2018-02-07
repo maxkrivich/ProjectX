@@ -47,6 +47,11 @@ func (rs *RunService) initDB() (*gorm.DB, error) {
 	if !db.HasTable(&models.Run{}) {
 		db.CreateTable(&models.Run{})
 	}
+	if !db.HasTable(&models.File{}) {
+		db.CreateTable(&models.File{})
+	}
+	db.AutoMigrate(&models.File{}, &models.Run{})
+	db.Model(&models.Run{}).Related(&models.File{})
 	return db, nil
 }
 
