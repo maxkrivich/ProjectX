@@ -31,11 +31,12 @@ func NewRunService(conf *configs.Config) *RunService {
 	}
 	rs.db = db
 	rs.router = gin.Default()
-	rs.initRouters()
 
 	if err := rs.initMinioClient(); err != nil {
 		log.Fatal(err)
 	}
+
+	rs.initRouters()
 
 	return &rs
 }
@@ -45,18 +46,17 @@ func (rs *RunService) initMinioClient() (err error) {
 	if err != nil {
 		return err
 	}
-	bucketName := "files"
 
-	if err := rs.mc.MakeBucket(bucketName, "/data"); err != nil {
+	if err := rs.mc.MakeBucket(rs.configs.FileBucketName, ""); err != nil {
 
-		exists, err := rs.mc.BucketExists(bucketName)
+		exists, err := rs.mc.BucketExists(rs.configs.FileBucketName)
 		if err == nil && exists {
-			log.Printf("Bucket '%s' is already exists\n", bucketName)
+			log.Printf("Bucket '%s' is already exists\n", rs.configs.FileBucketName)
 		} else {
 			return err
 		}
 	}
-	log.Printf("Successfully created '%s'\n", bucketName)
+	log.Printf("Successfully created '%s'\n", rs.configs.FileBucketName)
 	return nil
 }
 
@@ -77,13 +77,14 @@ func (rs *RunService) initDB() (*gorm.DB, error) {
 	if !db.HasTable(&models.File{}) {
 		db.CreateTable(&models.File{})
 	}
+	// init schema
+	db.Model(&models.File{}).AddForeignKey("run_id", "runs(id)", "RESTRICT", "RESTRICT")
 	db.AutoMigrate(&models.File{}, &models.Run{})
-	db.Model(&models.Run{}).Related(&models.File{})
 	return db, nil
 }
 
 func (rs *RunService) initRouters() {
-	rc := api.NewAPIController(rs.db)
+	rc := api.NewAPIController(rs.db, rs.mc, rs.configs)
 	rs.router.GET("/run", rc.GetAllRun)
 	rs.router.GET("/run/:id", rc.GetRun)
 	rs.router.POST("/run", rc.CreateRun)
@@ -94,11 +95,6 @@ func (rs *RunService) initRouters() {
 	rs.router.POST("file/upload", rc.FileUpload)
 	rs.router.DELETE("file/delete", rc.FileDelete)
 }
-
-// TODO
-//func (rs *RunService) Migrate() error {
-//	return nil
-//}
 
 func main() {
 	flag.Parse()
