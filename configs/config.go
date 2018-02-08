@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 )
 
 type DBConfig struct {
@@ -21,10 +22,12 @@ type ServerConfig struct {
 }
 
 type MinioConfig struct {
-	Endpoint        string
-	AccessKeyID     string
-	SecretAccessKey string
-	UseSSL          bool
+	Endpoint            string
+	AccessKeyID         string
+	SecretAccessKey     string
+	UseSSL              bool
+	PresignedUrlExpires time.Duration
+	FileBucketName      string
 }
 
 type Config struct {
@@ -63,10 +66,12 @@ func newServerConfig() ServerConfig {
 
 func newMinioConfig() MinioConfig {
 	return MinioConfig{
-		Endpoint:        getEnvVal("MINIO_ENDPOINT", false),
-		AccessKeyID:     getEnvVal("MINIO_ACCESS_KEY", false),
-		SecretAccessKey: getEnvVal("MINIO_SECRET_KEY", false),
-		UseSSL:          false,
+		Endpoint:            getEnvVal("MINIO_ENDPOINT", false),
+		AccessKeyID:         getEnvVal("MINIO_ACCESS_KEY", false),
+		SecretAccessKey:     getEnvVal("MINIO_SECRET_KEY", false),
+		UseSSL:              false,
+		PresignedUrlExpires: time.Minute * 5,
+		FileBucketName:      "files",
 	}
 }
 
