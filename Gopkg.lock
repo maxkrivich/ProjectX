@@ -77,14 +77,20 @@
     "pkg/s3utils",
     "pkg/set"
   ]
-  revision = "14f1d472d115bac5ca4804094aa87484a72ced61"
-  version = "4.0.6"
+  revision = "706c81d3ee2a18cdd8239faf544de8a066e7e261"
+  version = "4.0.7"
 
 [[projects]]
   branch = "master"
   name = "github.com/mitchellh/go-homedir"
   packages = ["."]
   revision = "b8bc1bf767474819792c23f32d8286a45736f1c6"
+
+[[projects]]
+  name = "github.com/satori/go.uuid"
+  packages = ["."]
+  revision = "f58768cc1a7a7e77a3bd49e98cdd21419399b6a3"
+  version = "v1.2.0"
 
 [[projects]]
   name = "github.com/sirupsen/logrus"
@@ -111,7 +117,7 @@
     "idna",
     "lex/httplex"
   ]
-  revision = "2fb46b16b8dda405028c50f7c7f0f9dd1fa6bfb1"
+  revision = "f5dfe339be1d06f81b22525fe34671ee7d2c8904"
 
 [[projects]]
   branch = "master"
@@ -141,7 +147,7 @@
     "unicode/norm",
     "unicode/rangetable"
   ]
-  revision = "e19ae1496984b1c655b8044a65c0300a3c878dd3"
+  revision = "4e4a3210bb54bb31f6ab2cdca2edcc0b50c420c1"
 
 [[projects]]
   name = "gopkg.in/go-playground/validator.v8"
@@ -158,6 +164,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "d0c5dc7d1a8ae235367d1c8d38cc88d5902d3d8aa23306fac6fe971dda25133c"
+  inputs-digest = "a3851e5f899e31ac14e55c2a4f9ea3797595c4d5ae35dac66b24a6046ca84bef"
   solver-name = "gps-cdcl"
   solver-version = 1
