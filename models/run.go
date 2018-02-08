@@ -10,7 +10,6 @@ type Run struct {
 	UpdatedAt time.Time  `json:"updated_at"`
 	DeletedAt *time.Time `sql:"index" json:"-"`
 	Name      string     `gorm:"size:255; not null" json:"name"`
-	Files     []File     `gorm:"many2many:run_files;"`
 }
 
 func (r Run) Validate() bool {
