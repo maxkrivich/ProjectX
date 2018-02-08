@@ -2,21 +2,28 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"math"
 	"net/http"
+	"net/url"
 	"strconv"
 	"time"
 
+	"github.com/maxkrivich/ProjectX/configs"
 	"github.com/maxkrivich/ProjectX/models"
 
+	"github.com/minio/minio-go"
+	"github.com/satori/go.uuid"
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 )
 
 type APIControllers struct {
-	db *gorm.DB
+	db   *gorm.DB
+	mc   *minio.Client
+	conf *configs.Config
 }
 
 type Pagination struct {
@@ -31,8 +38,8 @@ type RunPagination struct {
 	Pagination
 }
 
-func NewAPIController(db *gorm.DB) *APIControllers {
-	return &APIControllers{db: db}
+func NewAPIController(db *gorm.DB, mc *minio.Client, conf *configs.Config) *APIControllers {
+	return &APIControllers{db: db, mc: mc, conf: conf}
 }
 
 func (rc *APIControllers) CreateRun(c *gin.Context) {
@@ -152,4 +159,82 @@ func (rc *APIControllers) getId(c *gin.Context) (uint, error) {
 		return 0, err
 	}
 	return uint(id), nil
+}
+
+func (rc *APIControllers) FileUpload(c *gin.Context) {
+	runId := c.Query("runID")
+	fileId := c.Query("fileID")
+	fileName := c.Query("name")
+
+	rid, err := strconv.Atoi(runId)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "bad request"})
+		return
+	}
+	fid, err := strconv.ParseUint(fileId, 10, 32)
+	if err != nil {
+		log.Println(err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "bad request"})
+		return
+	}
+
+	var run models.Run
+	if rc.db.First(&run, rid).RecordNotFound() {
+		c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+		return
+	}
+	var file models.File
+	uName := uuid.NewV4()
+	file.UUID = uName.String()
+	file.FileName = fileName
+	file.RunID = run.ID // Dirty read if run was deleted
+	file.FileID = uint(fid)
+	file.CreatedAt = time.Now()
+	if err := rc.db.Create(&file).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "bad request"})
+		return
+	}
+	presignedURL, err := rc.mc.PresignedPutObject(rc.conf.FileBucketName, file.UUID, rc.conf.PresignedUrlExpires)
+	if err != nil {
+		log.Println(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "=("})
+		return
+	}
+	c.JSON(http.StatusCreated, gin.H{"upload_url": presignedURL.String()})
+}
+
+func (rc *APIControllers) FileDownload(c *gin.Context) {
+	runId := c.Query("runID")
+	fileId := c.Query("fileID")
+
+	rid, err := strconv.Atoi(runId)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "bad request"})
+		return
+	}
+
+	fid, err := strconv.Atoi(fileId)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "bad request"})
+		return
+	}
+
+	var file models.File
+	if rc.db.Model(&file).Where("file_id = ? AND run_id = ?", fid, rid).First(&file).RecordNotFound() {
+		c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+		return
+	}
+	reqParams := make(url.Values)
+	reqParams.Set("response-content-disposition", fmt.Sprintf("attachment; filename=\"%s\"", file.FileName))
+	presignedURL, err := rc.mc.PresignedGetObject(rc.conf.FileBucketName, file.UUID, rc.conf.PresignedUrlExpires, reqParams)
+	if err != nil {
+		log.Println(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "=("})
+		return
+	}
+	c.JSON(http.StatusCreated, gin.H{"download_url": presignedURL.String()})
+}
+
+func (rc *APIControllers) FileDelete(c *gin.Context) {
+
 }
