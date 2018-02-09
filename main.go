@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/maxkrivich/ProjectX/api"
 	"github.com/maxkrivich/ProjectX/configs"
@@ -61,6 +62,7 @@ func (rs *RunService) initMinioClient() (err error) {
 }
 
 func (rs *RunService) Run() error {
+	go rs.listenBucketNotification()
 	err := rs.router.Run(fmt.Sprintf("%s:%s", rs.configs.ServerConfig.Host, rs.configs.ServerConfig.Port))
 	return err
 }
@@ -94,6 +96,55 @@ func (rs *RunService) initRouters() {
 	rs.router.GET("file/download", rc.FileDownload)
 	rs.router.POST("file/upload", rc.FileUpload)
 	rs.router.DELETE("file/delete", rc.FileDelete)
+}
+
+func (rs *RunService) listenBucketNotification() {
+	doneCh := make(chan struct{})
+	objCreate, objRemove := make(chan minio.NotificationEvent), make(chan minio.NotificationEvent)
+	defer close(doneCh)
+	defer close(objRemove)
+	defer close(objCreate)
+
+	go rs.handleEvents(objCreate, objRemove, doneCh)
+
+	for notificationInfo := range rs.mc.ListenBucketNotification(rs.configs.FileBucketName, "", "", []string{
+		"s3:ObjectCreated:*",
+		"s3:ObjectRemoved:*",
+	}, doneCh) {
+		if notificationInfo.Err != nil {
+			log.Println(notificationInfo.Err)
+		}
+		log.Println(notificationInfo)
+
+		for _, val := range notificationInfo.Records {
+			if strings.HasPrefix(val.EventName, "s3:ObjectCreated:") {
+				objCreate <- val
+			} else if strings.HasPrefix(val.EventName, "s3:ObjectRemoved:") {
+				objRemove <- val
+			}
+
+		}
+	}
+}
+
+func (rs *RunService) handleEvents(objCreate, objRemove chan minio.NotificationEvent, done chan struct{}) {
+	for {
+		select {
+		case e := <-objCreate:
+			var file models.File
+			if !rs.db.Model(&file).Where("uuid = ?", e.S3.Object.Key).First(&file).RecordNotFound() {
+				file.Uploaded = true
+				rs.db.Save(&file)
+			}
+		case e := <-objRemove:
+			var file models.File
+			if !rs.db.Model(&file).Where("uuid = ?", e.S3.Object.Key).First(&file).RecordNotFound() {
+				rs.db.Delete(&file)
+			}
+		case <-done:
+			return
+		}
+	}
 }
 
 func main() {
