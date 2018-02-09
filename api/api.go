@@ -251,5 +251,32 @@ func (rc *APIControllers) FileDownload(c *gin.Context) {
 }
 
 func (rc *APIControllers) FileDelete(c *gin.Context) {
+	runId := c.Query("runID")
+	fileId := c.Query("fileID")
 
+	rid, err := strconv.Atoi(runId)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "bad request"})
+		return
+	}
+
+	fid, err := strconv.Atoi(fileId)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "bad request"})
+		return
+	}
+
+	var file models.File
+	if rc.db.Model(&file).Where("file_id = ? AND run_id = ?", fid, rid).First(&file).RecordNotFound() {
+		c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+		return
+	}
+
+	err = rc.mc.RemoveObject(rc.conf.FileBucketName, file.ULID)
+	if err != nil {
+		log.Println(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "=("})
+		return
+	}
+	c.JSON(http.StatusNoContent, gin.H{"message": "Ok"})
 }
