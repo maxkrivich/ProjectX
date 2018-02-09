@@ -177,6 +177,10 @@ func (rc *APIControllers) FileUpload(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "bad request"})
 		return
 	}
+	if len(fileName) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "file name is empty"})
+		return
+	}
 
 	var run models.Run
 	if rc.db.First(&run, rid).RecordNotFound() {
@@ -184,13 +188,21 @@ func (rc *APIControllers) FileUpload(c *gin.Context) {
 		return
 	}
 	var file models.File
-	uName := uuid.NewV4()
-	file.UUID = uName.String()
-	file.FileName = fileName
-	file.RunID = run.ID // Dirty read if run was deleted
-	file.FileID = uint(fid)
-	file.CreatedAt = time.Now()
-	if err := rc.db.Create(&file).Error; err != nil {
+
+	if rc.db.Model(&file).Where("file_id = ? AND run_id = ?", fid, rid).First(&file).RecordNotFound() {
+		uName := uuid.NewV4()
+		file.UUID = uName.String()
+		file.RunID = run.ID // Dirty read if run was deleted
+		file.FileID = uint(fid)
+		file.Uploaded = false
+		file.FileName = fileName
+	}
+	if file.FileName != fileName {
+		file.FileName = fileName
+	}
+	file.Uploaded = false
+	if err = rc.db.Save(&file).Error; err != nil {
+		log.Println(err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "bad request"})
 		return
 	}
