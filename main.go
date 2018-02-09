@@ -10,6 +10,7 @@ import (
 	"github.com/maxkrivich/ProjectX/configs"
 	"github.com/maxkrivich/ProjectX/models"
 	"github.com/minio/minio-go"
+	"github.com/minio/minio-go/pkg/policy"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
@@ -33,7 +34,7 @@ func NewRunService(conf *configs.Config) *RunService {
 	rs.db = db
 	rs.router = gin.Default()
 
-	if err := rs.initMinioClient(); err != nil {
+	if err := rs.initMinio(); err != nil {
 		log.Fatal(err)
 	}
 
@@ -42,12 +43,12 @@ func NewRunService(conf *configs.Config) *RunService {
 	return &rs
 }
 
-func (rs *RunService) initMinioClient() (err error) {
+func (rs *RunService) initMinio() (err error) {
 	rs.mc, err = minio.New(rs.configs.Endpoint, rs.configs.AccessKeyID, rs.configs.SecretAccessKey, rs.configs.UseSSL)
 	if err != nil {
 		return err
 	}
-
+	// setup bucket
 	if err := rs.mc.MakeBucket(rs.configs.FileBucketName, ""); err != nil {
 
 		exists, err := rs.mc.BucketExists(rs.configs.FileBucketName)
@@ -58,6 +59,14 @@ func (rs *RunService) initMinioClient() (err error) {
 		}
 	}
 	log.Printf("Successfully created '%s'\n", rs.configs.FileBucketName)
+
+	// setup bucket policy
+	err = rs.mc.SetBucketPolicy(rs.configs.FileBucketName, "", policy.BucketPolicyReadWrite)
+	if err != nil {
+		log.Println(err)
+		return nil
+	}
+
 	return nil
 }
 

@@ -29,6 +29,8 @@ services:
     image: minio/minio
     restart: always
     env_file: .env
+    environment:
+      - MINIO_BROWSER=off
     ports:
       - "9000:9000"
     command: server /data
