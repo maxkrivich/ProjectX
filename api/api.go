@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"math"
+	"math/rand"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -15,7 +16,7 @@ import (
 	"github.com/maxkrivich/ProjectX/models"
 
 	"github.com/minio/minio-go"
-	"github.com/satori/go.uuid"
+	"github.com/oklog/ulid"
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 )
@@ -190,8 +191,10 @@ func (rc *APIControllers) FileUpload(c *gin.Context) {
 	var file models.File
 
 	if rc.db.Model(&file).Where("file_id = ? AND run_id = ?", fid, rid).First(&file).RecordNotFound() {
-		uName := uuid.NewV4()
-		file.UUID = uName.String()
+		t := time.Unix(1000000, 0)
+		entropy := rand.New(rand.NewSource(t.UnixNano()))
+		uName := ulid.MustNew(ulid.Timestamp(t), entropy)
+		file.ULID = uName.String()
 		file.RunID = run.ID // Dirty read if run was deleted
 		file.FileID = uint(fid)
 		file.Uploaded = false
@@ -206,7 +209,7 @@ func (rc *APIControllers) FileUpload(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "bad request"})
 		return
 	}
-	presignedURL, err := rc.mc.PresignedPutObject(rc.conf.FileBucketName, file.UUID, rc.conf.PresignedUrlExpires)
+	presignedURL, err := rc.mc.PresignedPutObject(rc.conf.FileBucketName, file.ULID, rc.conf.PresignedUrlExpires)
 	if err != nil {
 		log.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "=("})
@@ -238,7 +241,7 @@ func (rc *APIControllers) FileDownload(c *gin.Context) {
 	}
 	reqParams := make(url.Values)
 	reqParams.Set("response-content-disposition", fmt.Sprintf("attachment; filename=\"%s\"", file.FileName))
-	presignedURL, err := rc.mc.PresignedGetObject(rc.conf.FileBucketName, file.UUID, rc.conf.PresignedUrlExpires, reqParams)
+	presignedURL, err := rc.mc.PresignedGetObject(rc.conf.FileBucketName, file.ULID, rc.conf.PresignedUrlExpires, reqParams)
 	if err != nil {
 		log.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "=("})

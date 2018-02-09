@@ -87,10 +87,10 @@
   revision = "b8bc1bf767474819792c23f32d8286a45736f1c6"
 
 [[projects]]
-  name = "github.com/satori/go.uuid"
+  name = "github.com/oklog/ulid"
   packages = ["."]
-  revision = "f58768cc1a7a7e77a3bd49e98cdd21419399b6a3"
-  version = "v1.2.0"
+  revision = "d311cb43c92434ec4072dfbbda3400741d0a6337"
+  version = "v0.3.0"
 
 [[projects]]
   name = "github.com/sirupsen/logrus"
@@ -108,7 +108,7 @@
   branch = "master"
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
-  revision = "d9133f5469342136e669e85192a26056b587f503"
+  revision = "5119cf507ed5294cc409c092980c7497ee5d6fd2"
 
 [[projects]]
   branch = "master"
@@ -164,6 +164,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "a3851e5f899e31ac14e55c2a4f9ea3797595c4d5ae35dac66b24a6046ca84bef"
+  inputs-digest = "6a9b5a4a6935e086bec2c2e72f24f9c6579a17d7af3d924394065ef6012b185c"
   solver-name = "gps-cdcl"
   solver-version = 1
