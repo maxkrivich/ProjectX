@@ -247,7 +247,7 @@ func (rc *APIControllers) FileDownload(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "=("})
 		return
 	}
-	c.JSON(http.StatusCreated, gin.H{"download_url": presignedURL.String()})
+	c.JSON(http.StatusCreated, gin.H{"download_url": presignedURL.String(), "file_name": file.FileName})
 }
 
 func (rc *APIControllers) FileDelete(c *gin.Context) {
