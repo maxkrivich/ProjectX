@@ -40,7 +40,7 @@ deps:
 	dep ensure
 
 build-linux:
-		CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(GOBUILD) -o $(BINARY_NAME) -v
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(GOBUILD) -o $(BINARY_NAME) -v
 
 docker-build:
 	docker run --rm -it -v $(GOPATH):/go -w /go/src/github.com/maxkrivich/$(PROJECT_NAME)/ --env GOOS=$(TARGET_OS) golang:latest go build -o $(BINARY_NAME) -v

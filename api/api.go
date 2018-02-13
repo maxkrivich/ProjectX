@@ -53,5 +53,5 @@ func (self *APIControllers) initRouters() {
 }
 
 func (self *APIControllers) ListenAndServe(addr string) error {
-	return self.router.Run()
+	return self.router.Run(addr)
 }
